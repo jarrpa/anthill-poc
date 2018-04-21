@@ -1,0 +1,72 @@
+---
+apiVersion: gluster.org/v1alpha1
+kind: GlusterCluster
+metadata:
+  name: demo
+  namespace: anthill
+spec:
+  wipe: true
+  nodes:
+  - devices:
+    - local:
+        path: "/dev/vdb"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node0
+    - local:
+        path: "/dev/vdc"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node1
+  - devices:
+    - local:
+        path: "/dev/vdb"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node1
+    - local:
+        path: "/dev/vdc"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node1
+  - devices:
+    - local:
+        path: "/dev/vdb"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node2
+    - local:
+        path: "/dev/vdc"
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - node2
