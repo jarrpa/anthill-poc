@@ -20,6 +20,7 @@ mkdir -p <src>/github.com/gluster
 cd <src>/github.com/gluster
 git checkout git@github.com:jarrpa/anthill.git
 cd anthill
+dep ensure
 make
 ```
 
