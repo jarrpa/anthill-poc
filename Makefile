@@ -29,7 +29,7 @@ build:
 		-e "CGO_ENABLED=0" \
 		-e "GOCACHE=off" \
 		-u $$(id -u):$$(id -g) \
-		-v $$(pwd):$(CONTAINER_DIR) \
+		-v $$(pwd):$(CONTAINER_DIR):Z \
 		-w $(CONTAINER_DIR) \
 		golang:1.10-alpine \
 		go build -installsuffix "anthill" -o _output/bin/anthill ./cmd/anthill
