@@ -18,6 +18,7 @@ spec:
               operator: In
               values:
               - node0
+  - devices:
     - local:
         path: "/dev/vdc"
       nodeAffinity:
@@ -39,6 +40,7 @@ spec:
               operator: In
               values:
               - node1
+  - devices:
     - local:
         path: "/dev/vdc"
       nodeAffinity:
@@ -60,6 +62,7 @@ spec:
               operator: In
               values:
               - node2
+  - devices:
     - local:
         path: "/dev/vdc"
       nodeAffinity:
