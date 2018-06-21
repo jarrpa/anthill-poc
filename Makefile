@@ -14,7 +14,7 @@ endif
 
 .PHONY: all build container push test clean
 
-all: codegen dep build
+all: dep codegen build
 
 codegen:
 	rm -rf pkg/client
@@ -42,7 +42,7 @@ container: build quick-container
 push: container
 	$(DOCKER_CMD) push $(IMAGE)
 
-full: codegen dep push
+full: dep codegen push
 
 test:
 	go test `go list ./... | grep -v 'vendor'`
