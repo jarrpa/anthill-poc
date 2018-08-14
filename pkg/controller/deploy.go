@@ -82,7 +82,6 @@ func (c *Controller) deployNode(gc *anthillapi.GlusterCluster, node *anthillapi.
 		if err := c.createGlusterMountVolumes(node); err != nil {
 			return err
 		}
-
 		for _, device := range node.Devices {
 			glog.Infof("Processing node %s device %s", node.Name, device.Name)
 			if err := c.createVolumeResources(device); err != nil {

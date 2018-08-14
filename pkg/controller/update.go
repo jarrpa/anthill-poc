@@ -190,7 +190,7 @@ func (c *Controller) updateGlusterNode(gc *anthillapi.GlusterCluster, old *anthi
 			var newDevices []string
 			for _, upVol := range updateVolumes {
 				if upVol.New != nil {
-					newDevices = append(newDevices, "/dev/"+upVol.New.Name)
+					newDevices = append(newDevices, deviceDir+upVol.New.Name)
 				}
 			}
 			if err := c.wipeDevices(new, newDevices); err != nil {

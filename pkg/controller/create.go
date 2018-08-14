@@ -131,7 +131,7 @@ func (c *Controller) createHeketiCredentials(node *anthillapi.Node) error {
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     "anthill-controller",
+			Name:     "anthill",
 		},
 	}
 

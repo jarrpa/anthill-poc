@@ -33,6 +33,8 @@ build:
 		-w $(CONTAINER_DIR) \
 		golang:1.10-alpine \
 		go build -installsuffix "anthill" -o _output/bin/anthill ./cmd/anthill
+		#-it \
+		#sh
 
 quick-container:
 	$(DOCKER_CMD) build -t $(IMAGE) .

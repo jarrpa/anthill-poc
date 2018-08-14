@@ -21,6 +21,7 @@ var cpuQuantity, _ = resource.ParseQuantity("100m")
 var memQuantity, _ = resource.ParseQuantity("100Mi")
 var blockMode = corev1.PersistentVolumeBlock
 var trueBool = true
+var deviceDir = "/dev/gluster/"
 
 var GlusterClusterDefaults = map[string]interface{}{
 	"Spec": map[string]interface{}{
@@ -87,7 +88,7 @@ var HeketiNodeDefaults = map[string]interface{}{
 		"Containers": []corev1.Container{
 			corev1.Container{
 				Name:  "heketi",
-				Image: "gluster/heketiclone:latest",
+				Image: "heketi/heketi:dev",
 				Ports: []corev1.ContainerPort{
 					corev1.ContainerPort{ContainerPort: 8080},
 				},
@@ -173,7 +174,8 @@ var GlusterNodeDefaults = map[string]interface{}{
 		},
 	},
 	"Spec": map[string]interface{}{
-		"Containers": []corev1.Container{},
+		"InitContainers": []corev1.Container{},
+		"Containers":     []corev1.Container{},
 		"Volumes": []corev1.Volume{
 			corev1.Volume{
 				Name: "run",
@@ -181,9 +183,43 @@ var GlusterNodeDefaults = map[string]interface{}{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
+			corev1.Volume{
+				Name: "lvm",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/run/lvm",
+					},
+				},
+			},
+			corev1.Volume{
+				Name: "dev",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/dev",
+					},
+				},
+			},
+			corev1.Volume{
+				Name: "blkdevbridge",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium: corev1.StorageMediumMemory,
+					},
+				},
+			},
 		},
 	},
 	"Zone": 1,
+}
+
+var InitContainerDefaults = corev1.Container{
+	Name:    "blkdevmapper",
+	Image:   "busybox:latest",
+	Command: []string{"/bin/sh", "-c"},
+	Args:    []string{"cp -a $(DEVICES) /mnt"},
+	VolumeMounts: []corev1.VolumeMount{
+		corev1.VolumeMount{Name: "blkdevbridge", MountPath: "/mnt"},
+	},
 }
 
 var GlusterContainerDefaults = corev1.Container{
@@ -214,6 +250,9 @@ var GlusterContainerDefaults = corev1.Container{
 		corev1.VolumeMount{Name: "gluster-state", MountPath: "/glusterfs"},
 		corev1.VolumeMount{Name: "kernel-modules", MountPath: "/usr/lib/modules", ReadOnly: true},
 		corev1.VolumeMount{Name: "run", MountPath: "/run"},
+		//corev1.VolumeMount{Name: "lvm", MountPath: "/run/lvm"},
+		//corev1.VolumeMount{Name: "dev", MountPath: "/dev"},
+		corev1.VolumeMount{Name: "blkdevbridge", MountPath: deviceDir},
 	},
 	LivenessProbe: &corev1.Probe{
 		InitialDelaySeconds: int32(30),
@@ -236,6 +275,7 @@ var GlusterContainerDefaults = corev1.Container{
 		},
 	},
 	SecurityContext: &corev1.SecurityContext{
+		Privileged:   &trueBool,
 		Capabilities: &corev1.Capabilities{Add: []corev1.Capability{corev1.Capability("SYS_MODULE")}},
 	},
 	//ImagePullPolicy: corev1.PullIfNotPresent,
@@ -391,7 +431,7 @@ func (c *Controller) initGlusterNode(gc *anthillapi.GlusterCluster, node *anthil
 		"name":           node.Name,
 		"anthill":        gc.Name + "-node",
 		gc.Name:          "gluster-node",
-		"glusterfs-node": node.Name + "." + gc.Name,
+		"glusterfs-node": node.Name + "." + gc.Name + "." + gc.Namespace + ".svc",
 	}
 
 	var stateVol = node.StateVolume
@@ -427,6 +467,8 @@ func (c *Controller) initGlusterNode(gc *anthillapi.GlusterCluster, node *anthil
 	node.Spec.Volumes = append(node.Spec.Volumes, kernelMods)
 
 	node.Spec.Containers = append(node.Spec.Containers, GlusterContainerDefaults)
+
+	node.Spec.InitContainers = append(node.Spec.InitContainers, InitContainerDefaults)
 
 	return nil
 }
@@ -466,9 +508,17 @@ func (c *Controller) initGlusterNodeVolume(node *anthillapi.Node, volume *anthil
 
 	volDevice := corev1.VolumeDevice{
 		Name:       volume.Name,
-		DevicePath: "/dev/" + volume.Name,
+		DevicePath: deviceDir + volume.Name,
 	}
 	node.Spec.Containers[0].VolumeDevices = append(node.Spec.Containers[0].VolumeDevices, volDevice)
+	node.Spec.InitContainers[0].VolumeDevices = append(node.Spec.InitContainers[0].VolumeDevices, volDevice)
+
+	if len(node.Spec.InitContainers[0].Env) == 0 {
+		node.Spec.InitContainers[0].Env = []corev1.EnvVar{
+			corev1.EnvVar{Name: "DEVICES"},
+		}
+	}
+	node.Spec.InitContainers[0].Env[0].Value += " " + volDevice.DevicePath
 
 	return nil
 }
